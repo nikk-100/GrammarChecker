@@ -2,12 +2,14 @@ import { sanitize } from "../pipeline/stage1_sanitize";
 import { tagWords } from "../pipeline/stage2_tag";
 import { runRules } from "../pipeline/stage3_ruleEngine";
 import { assembleCorrectedText } from "../pipeline/stage5_assemble";
+import { validateSentence } from "../pipeline/stage6_validate";
 
 export function analyzeSentence(inputText) {
   const sanitizedText = sanitize(inputText);
   const taggedWords = tagWords(sanitizedText);
   const violations = runRules(sanitizedText, taggedWords);
   const correctedText = assembleCorrectedText(sanitizedText, violations);
+  const validationResult = validateSentence(correctedText);
 
   const pipelineSteps = [
     {
@@ -32,6 +34,7 @@ export function analyzeSentence(inputText) {
       originalSegment: sanitizedText,
       correctedSegment: correctedText,
     },
+    validationResult,
   ];
 
   return {
@@ -39,7 +42,7 @@ export function analyzeSentence(inputText) {
     sanitizedText,
     partOfSpeechBreakdown: taggedWords,
     correctedText,
-    isCorrect: violations.length === 0,
+    isCorrect: violations.length === 0 && validationResult.isComplete,
     pipelineSteps,
   };
 }
